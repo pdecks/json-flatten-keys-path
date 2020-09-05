@@ -1,6 +1,10 @@
 # json-flatten-keys-path
 
-####Built with Maven. To run from command line ...
+Simple program that takes a JSON object as input and outputs (to file) a flattened version of the JSON object, with keys as the path to every terminal value in the JSON structure.
+
+_Built with Maven._
+
+#### To run from command line
 
 - Build the project
 
