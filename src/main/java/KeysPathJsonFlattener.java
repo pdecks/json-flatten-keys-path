@@ -21,9 +21,7 @@ public class KeysPathJsonFlattener {
         flattenedPairs = new HashMap<>();
     }
 
-    /**
-     * Takes the JSON Object parsed from the input string and generates the flattened JSON Object.
-     */
+    // Takes the JSON Object parsed from the input string and generates the flattened JSON Object.
     public JsonObject generateFlatJsonObject(JsonObject origJsonObject) {
         if (origJsonObject == null || origJsonObject.entrySet() == null) return null;
 
@@ -33,15 +31,16 @@ public class KeysPathJsonFlattener {
         }
 
         // convert these pairs to the desired flattened JSON Object
-        JsonObject flattenedObject = new JsonObject();
+        JsonObject flatObject = new JsonObject();
         for (Map.Entry<String, JsonPrimitive> entry : flattenedPairs.entrySet()) {
-            flattenedObject.add(entry.getKey(), entry.getValue());
+            flatObject.add(entry.getKey(), entry.getValue());
         }
 
-        return flattenedObject;
+        return flatObject;
     }
 
-    public void findPath(String pathSoFar, JsonElement element) {
+    // recursive method for walking JSON tree to all leaf nodes (primitives)
+    private void findPath(String pathSoFar, JsonElement element) {
         // found the end of a path
         if (element.isJsonPrimitive()) {
             flattenedPairs.put(pathSoFar, element.getAsJsonPrimitive());
@@ -53,13 +52,27 @@ public class KeysPathJsonFlattener {
         }
     }
 
-    // accepts input via stdin
-    public JsonObject parseInputAsJsonObject() throws IOException {
+    // accepts input from stdin
+    public JsonObject parseStdinAsJsonObject() {
+        JsonObject root = null;
         InputStreamReader inputStreamReader = new InputStreamReader(System.in);
-        JsonReader jsonParser = new JsonReader(inputStreamReader);
+        try (JsonReader jsonParser = new JsonReader(inputStreamReader)) {
+            root = Streams.parse(jsonParser).getAsJsonObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        JsonObject root = Streams.parse(jsonParser).getAsJsonObject();
-        jsonParser.close();
+        return root;
+    }
+
+    // accepts input from file
+    public JsonObject parseFileAsJsonObject(String inputFile) {
+        JsonObject root = null;
+        try (JsonReader jsonParser = new JsonReader(new FileReader(inputFile))) {
+            root = Streams.parse(jsonParser).getAsJsonObject();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return root;
     }
@@ -69,7 +82,7 @@ public class KeysPathJsonFlattener {
         return gson.toJson(flattenedJsonObject);
     }
 
-    public void writeResultToFile(String flatJson) {
+    private void writeResultToFile(String flatJson) {
         File result = new File(System.getProperty("user.dir") + "/output.json");
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(result))) {
             bw.write(flatJson);
@@ -80,17 +93,21 @@ public class KeysPathJsonFlattener {
     }
 
     public static void main(String[] args) {
-        KeysPathJsonFlattener flat = new KeysPathJsonFlattener();
-        JsonObject origJson = null; // created with input from stdin
-        try {
-            origJson = flat.parseInputAsJsonObject();
-        } catch (IOException e) {
-            e.printStackTrace();
+        KeysPathJsonFlattener flattener = new KeysPathJsonFlattener();
+        JsonObject inputJson;
+        if (args.length == 0) {
+            inputJson = flattener.parseStdinAsJsonObject(); // created with input from stdin
+        } else if (args.length == 2 && "-file".equals(args[0])) {
+            inputJson = flattener.parseFileAsJsonObject(args[1]);
         }
-        JsonObject flatJson = flat.generateFlatJsonObject(origJson);
+        else {
+            throw new IllegalArgumentException("When reading from a file with '-file' you must specify the absolute file path.");
+        }
+
+        JsonObject flatJson = flattener.generateFlatJsonObject(inputJson);
         String flatString = getPrettyPrintFlatJson(flatJson);
 
         // write to output
-        flat.writeResultToFile(flatString);
+        flattener.writeResultToFile(flatString);
     }
 }
