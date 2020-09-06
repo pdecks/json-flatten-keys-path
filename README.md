@@ -43,12 +43,10 @@ File written successfully to /Users/patriciadecker/IdeaProjects/json-flatten-key
 [INFO] ------------------------------------------------------------------------
 ``` 
 
-
+### Test Cases
     
-#### Running Unit Tests
+#### Unit Tests
 The unit tests consume input and expected output files within `/src/test/resources`
-
-To run:
 
 ` mvn test`    
 
